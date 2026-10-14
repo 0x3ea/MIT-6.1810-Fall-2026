@@ -57,9 +57,59 @@ main(int argc, char *argv[])
   exit(0);
 }
 
+int
+width(char fmt)
+{
+  switch (fmt) {
+  case 'i':
+    return 4;
+  case 'p':
+    return 8;
+  case 'h':
+    return 2;
+  case 'c':
+    return 1;
+  case 's':
+    return 8;
+  case 'S':
+    return 0;
+  default:
+    return 0;
+  }
+}
+
 void
 memdump(char *fmt, char *data, int len)
 {
-  // Your code here.  `data` holds `len` valid bytes.
-
+  int p = 0;
+  for (; *fmt; fmt++) {
+    int w = width(*fmt);
+    if (p + w > len) {
+      printf("memdump: not enough data\n");
+      return;
+    }
+    switch (*fmt) {
+    case 'i':
+      printf("%d\n", *(int *)(data + p));
+      break;
+    case 'p':
+      printf("%lx\n", *(uint64 *)(data + p));
+      break;
+    case 'h':
+      printf("%d\n", *(short *)(data + p));
+      break;
+    case 'c':
+      printf("%c\n", data[p]);
+      break;
+    case 's':
+      printf("%s\n", *(char **)(data + p));
+      break;
+    case 'S':
+      printf("%s\n", data + p);
+      break;
+    default:
+      break;
+    }
+    p += w;
+  }
 }
