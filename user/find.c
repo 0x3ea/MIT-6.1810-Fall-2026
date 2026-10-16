@@ -19,7 +19,7 @@ fmtname(char *path)
 }
 
 void
-find(char *path, char *target)
+find(char *path, char *target, char *cmd, char *argv[], int cur)
 {
   char *p;
   char buf[512];
@@ -39,7 +39,19 @@ find(char *path, char *target)
   }
 
   if (strcmp(fmtname(path), target) == 0) {
-    printf("%s\n", path);
+    if (cur) {
+      int pid = fork();
+      if (pid == 0) {
+        argv[cur++] = path;
+        argv[cur] = 0;
+        exec(cmd, argv);
+        fprintf(2, "find: exec %s failed\n", cmd);
+        exit(1);
+      }
+      wait(0);
+    } else {
+      printf("%s\n", path);
+    }
   }
 
   if (st.type == T_DIR) {
@@ -53,7 +65,7 @@ find(char *path, char *target)
       }
       memmove(p, de.name, DIRSIZ);
       p[DIRSIZ] = '\0';
-      find(buf, target);
+      find(buf, target, cmd, argv, cur);
     }
   }
   close(fd);
@@ -62,11 +74,23 @@ find(char *path, char *target)
 int
 main(int argc, char **argv)
 {
-  if (argc != 3) {
-    fprintf(2, "Usage: find path target\n");
-    exit(1);
+  if (argc == 3) {
+    find(argv[1], argv[2], 0, 0, 0);
+    exit(0);
   }
 
-  find(argv[1], argv[2]);
-  exit(0);
+  if (argc >= 5 && strcmp(argv[3], "-exec") == 0) {
+    int i;
+    char **execcmd = malloc((argc - 2) * sizeof(char *));
+    int cur = 0;
+    for (i = 4; i < argc; i++) {
+      execcmd[cur++] = argv[i];
+    }
+
+    find(argv[1], argv[2], argv[4], execcmd, cur);
+    exit(0);
+  }
+
+  fprintf(2, "Usage: find path target [-exec cmd args]\n");
+  exit(1);
 }
