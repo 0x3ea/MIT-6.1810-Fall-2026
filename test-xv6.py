@@ -18,11 +18,11 @@ args = parser.parse_args()
 
 class QEMU(object):
 
-    def __init__(self, reset=False):
+    def __init__(self, reset=False, target="qemu"):
         if reset:
             self.build_xv6()
             self.reset_fs()
-        q = ["make", "qemu"]
+        q = ["make", target]
         self.proc = subprocess.Popen(q, stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT)
@@ -120,7 +120,7 @@ def crash_log():
     q.stop()
 
 def recover_log():
-    q = QEMU()
+    q = QEMU(target="qemu-fs")
     time.sleep(2)
     q.read()
     ok, _ = q.match('^recovering', exit=False)
@@ -151,7 +151,7 @@ def dorphan():
     q.stop()
 
 def recover_orphan():
-    q = QEMU()
+    q = QEMU(target="qemu-fs")
     time.sleep(2)
     q.read()
     q.match('^ireclaim')
